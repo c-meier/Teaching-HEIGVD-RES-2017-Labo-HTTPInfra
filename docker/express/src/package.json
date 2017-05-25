@@ -1,0 +1,15 @@
+{
+  "name": "res-labo5-express",
+  "version": "0.1.0",
+  "description": "The second step of the 5th labs of RES 2017.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Christopher Meier, Daniel Palumbo",
+  "license": "ISC",
+  "dependencies": {
+    "chance": "^1.0.9",
+    "express": "^4.15.3"
+  }
+}
