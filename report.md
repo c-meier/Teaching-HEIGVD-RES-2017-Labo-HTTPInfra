@@ -14,19 +14,30 @@ geometry: "margin=1in"
 
 # Step 1: Static HTTP server with apache httpd
 
-* Uses httpd official docker image
-	* Default website folder is `/usr/local/apache2/htdocs/` 
-* Use a copy of the default configuration
-	* Configuration path of httpd is `/usr/local/apache2/conf/`
-* Uses the bootstrap's one page template named *Stylish Portfolio*
+* Creating Dockerfile in `docker/httpd-static` folder.
+* Using php official docker image with apache `php:7.0-apache`
+	* Default website folder is `/var/www/html` 
+* Using the default configuration
+	* Configuration path of httpd is `/etc/apache2/`
+* Using the bootstrap's one page template named *Stylish Portfolio*
 
 # Step 2: Dynamic HTTP server with express.js
 
-* Uses node official docker image : version 4.4
-* Copy the source files `src` to `/opt/app`.
-* Use the Chance module to generate random City and Streetnames.
+* Creating Dockerfile in `docker/express-dynamic` folder.
+* Using node official docker image : version 4.4
+* Copying the source files `src` to `/opt/app`
+* Using the Chance module to generate random City and Streetnames
 
 # Step 3: Reverse proxy with apache (static configuration)
+
+* Creating Dockerfile in `docker/httpd-reverse-proxy` folder.
+* Using php official docker image with apache `php:7.0-apache`
+	* Copying the configuration to `/etc/apache2/`
+	* Setting the environnement variables to prevent errors
+	* Enabling the necessary modules and sites
+* Configuring the reverse proxy
+	* Hardcodded ip address for other docker container (httpd-static and express-dynamic      
+	needed to be started before and in this order)
 
 # Step 4: AJAX requests with JQuery
 
