@@ -74,9 +74,37 @@ function start_step4
 	xdg-open "http://$HOST:$port/"
 }
 
+function get_last_container_ip
+{
+	docker inspect $(tail -n 1 $CONTAINER_STARTED_FILE) | grep "\"IPAddress\"" -m 1 | grep -o "[0-9.]\+"
+}
+
 function start_step5
 {
 	echo "Starting step 5 !"
+	local port=8080
+	echo "Do not forget to add $HOST to your hosts file for correct DNS resolving."
+	
+	# Start step 4
+	docker build ./docker/httpd-ajax -t res/httpd-ajax
+	docker run -d --name "httpd-ajax" res/httpd-ajax >> $CONTAINER_STARTED_FILE
+	local ip_http_ajax=$(get_last_container_ip)
+
+	# Start step 2
+	docker build ./docker/express-dynamic -t res/express-dynamic
+	docker run -d --name "express-dynamic" res/express-dynamic >> $CONTAINER_STARTED_FILE
+	local ip_express_dynamic=$(get_last_container_ip)
+
+	docker build ./docker/httpd-dynamic-reverse-proxy -t res/httpd-dynamic-reverse-proxy
+	docker run -d --name "httpd-dynamic-reverse-proxy" -e IP_EXPRESS_DYNAMIC=$ip_express_dynamic -e IP_HTTPD_AJAX=$ip_http_ajax -p $port:80 res/httpd-dynamic-reverse-proxy >> $CONTAINER_STARTED_FILE
+	xdg-open "http://$HOST:$port/"
+
+	echo $ip_http_ajax $ip_express_dynamic
+}
+
+function start_step5b
+{
+	echo "Starting step 5b !"
 	local port=8080
 	echo "Do not forget to add $HOST to your hosts file for correct DNS resolving."
 	
@@ -88,8 +116,8 @@ function start_step5
 	docker build ./docker/express-dynamic -t res/express-dynamic
 	docker run -d --name "express-dynamic" res/express-dynamic >> $CONTAINER_STARTED_FILE
 
-	docker build ./docker/httpd-dynamic-reverse-proxy -t res/httpd-dynamic-reverse-proxy
-	docker run -d --name "httpd-dynamic-reverse-proxy" -p $port:80 res/httpd-dynamic-reverse-proxy >> $CONTAINER_STARTED_FILE
+	docker build ./docker/httpd-dynamic-reverse-proxy-b -t res/httpd-dynamic-reverse-proxy-b
+	docker run -d --name "httpd-dynamic-reverse-proxy-b" --link=httpd-ajax:httpd-ajax --link=express-dynamic:express-dynamic -p $port:80 res/httpd-dynamic-reverse-proxy-b >> $CONTAINER_STARTED_FILE
 	xdg-open "http://$HOST:$port/"
 }
 
@@ -105,6 +133,8 @@ case $1 in
 	"step4" ) start_step4
 		;;
 	"step5" ) start_step5
+		;;
+	"step5b" ) start_step5b
 		;;
 	  * ) show_help
 esac

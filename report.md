@@ -49,6 +49,17 @@ geometry: "margin=1in"
 
 # Step 5: Dynamic reverse proxy configuration
 
+* Copying `docker/httpd-reverse-proxy` to `docker/httpd-dynamic-reverse-proxy` folder
+* Using environnement variable to pass ip addresses.
+* Using sed to place ip addresses in conf file.
+* Using script to place ips and start server.
+
+OR
+
+* Copying `docker/httpd-reverse-proxy` to `docker/httpd-dynamic-reverse-proxy-b` folder
+* Using `--link` to specify dns name for container.
+* Using dns name in place of ip for containers.
+
 # Load balancing: multiple server nodes
 
 # Load balancing: round-robin vs sticky sessions
