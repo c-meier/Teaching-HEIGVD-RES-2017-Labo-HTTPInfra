@@ -40,12 +40,57 @@ function start_step3
 	echo "Starting step 3 !"
 	local port=8080
 	echo "Do not forget to add $HOST to your hosts file for correct DNS resolving."
-	start_step1
-	start_step2
+	
+	# Start step 1
+	docker build ./docker/httpd-static -t res/httpd-static
+	docker run -d --name "httpd-static" res/httpd-static >> $CONTAINER_STARTED_FILE
+
+	# Start step 2
+	docker build ./docker/express-dynamic -t res/express-dynamic
+	docker run -d --name "express-dynamic" res/express-dynamic >> $CONTAINER_STARTED_FILE
+
 	docker build ./docker/httpd-reverse-proxy -t res/httpd-reverse-proxy
 	docker run -d --name "httpd-reverse-proxy" -p $port:80 res/httpd-reverse-proxy >> $CONTAINER_STARTED_FILE
 	xdg-open "http://$HOST:$port/"
 	xdg-open "http://$HOST:$port/api/streets/"
+}
+
+function start_step4
+{
+	echo "Starting step 4 !"
+	local port=8080
+	echo "Do not forget to add $HOST to your hosts file for correct DNS resolving."
+	
+	# Start ajax
+	docker build ./docker/httpd-ajax -t res/httpd-ajax
+	docker run -d --name "httpd-ajax" res/httpd-ajax >> $CONTAINER_STARTED_FILE
+
+	# Start step 2
+	docker build ./docker/express-dynamic -t res/express-dynamic
+	docker run -d --name "express-dynamic" res/express-dynamic >> $CONTAINER_STARTED_FILE
+
+	docker build ./docker/httpd-reverse-proxy -t res/httpd-reverse-proxy
+	docker run -d --name "httpd-reverse-proxy" -p $port:80 res/httpd-reverse-proxy >> $CONTAINER_STARTED_FILE
+	xdg-open "http://$HOST:$port/"
+}
+
+function start_step5
+{
+	echo "Starting step 5 !"
+	local port=8080
+	echo "Do not forget to add $HOST to your hosts file for correct DNS resolving."
+	
+	# Start step 4
+	docker build ./docker/httpd-ajax -t res/httpd-ajax
+	docker run -d --name "httpd-ajax" res/httpd-ajax >> $CONTAINER_STARTED_FILE
+
+	# Start step 2
+	docker build ./docker/express-dynamic -t res/express-dynamic
+	docker run -d --name "express-dynamic" res/express-dynamic >> $CONTAINER_STARTED_FILE
+
+	docker build ./docker/httpd-dynamic-reverse-proxy -t res/httpd-dynamic-reverse-proxy
+	docker run -d --name "httpd-dynamic-reverse-proxy" -p $port:80 res/httpd-dynamic-reverse-proxy >> $CONTAINER_STARTED_FILE
+	xdg-open "http://$HOST:$port/"
 }
 
 ## Main
@@ -56,6 +101,10 @@ case $1 in
 	"step2" ) start_step2
 		;;
 	"step3" ) start_step3
+		;;
+	"step4" ) start_step4
+		;;
+	"step5" ) start_step5
 		;;
 	  * ) show_help
 esac

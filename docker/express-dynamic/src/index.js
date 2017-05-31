@@ -13,7 +13,7 @@ app.listen(3000, function () {
 });
 
 function generateStreetNames() {
-	var numberOfStreetNames = chance.integer({min: 1, max: 15});
+	var numberOfStreetNames = chance.integer({min: 1, max: 8});
 	console.log("Generating " + numberOfStreetNames + " street names.");
 
 	var streetNames = [];

@@ -36,10 +36,16 @@ geometry: "margin=1in"
 	* Setting the environnement variables to prevent errors
 	* Enabling the necessary modules and sites
 * Configuring the reverse proxy
-	* Hardcodded ip address for other docker container (httpd-static and express-dynamic      
+	* Hardcoded ip address for other docker container (httpd-static and express-dynamic      
 	needed to be started before and in this order)
 
 # Step 4: AJAX requests with JQuery
+
+* Copying `docker/httpd-static` to `docker/httpd-ajax` folder
+* Cross-domain policy forbids an ajax query from querying a different domain.
+* Load script `httpdoc/js/streets.js` from main page.
+	* Ajax request every 2 sec.
+	* Show from 1 to 8 street names and city in the *Streets* zone.
 
 # Step 5: Dynamic reverse proxy configuration
 
