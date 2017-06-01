@@ -3,6 +3,8 @@
 CONTAINER_STARTED_FILE=.autoContainers.txt
 HOST="demo.res.local"
 
+if [ -z ${WINDIR+x} ]; then START_UTILITY=xdg-open; else START_UTILITY=start; fi
+
 function show_help
 {
 	echo "$1 is not a valid argument";
@@ -23,7 +25,7 @@ function start_step1
 	local port=8000
 	docker build ./docker/httpd-static -t res/httpd-static
 	docker run -d --name "httpd-static" -p $port:80 res/httpd-static >> $CONTAINER_STARTED_FILE
-	xdg-open "http://$HOST:$port"
+	$START_UTILITY "http://$HOST:$port"
 }
 
 function start_step2
@@ -32,13 +34,13 @@ function start_step2
 	local port=3000
 	docker build ./docker/express-dynamic -t res/express-dynamic
 	docker run -d --name "express-dynamic" -p $port:3000 res/express-dynamic >> $CONTAINER_STARTED_FILE
-	xdg-open "http://$HOST:$port/"
+	$START_UTILITY "http://$HOST:$port/"
 }
 
 function start_step3
 {
 	echo "Starting step 3 !"
-	local port=8080
+	local port=9080
 	echo "Do not forget to add $HOST to your hosts file for correct DNS resolving."
 	
 	# Start step 1
@@ -51,14 +53,14 @@ function start_step3
 
 	docker build ./docker/httpd-reverse-proxy -t res/httpd-reverse-proxy
 	docker run -d --name "httpd-reverse-proxy" -p $port:80 res/httpd-reverse-proxy >> $CONTAINER_STARTED_FILE
-	xdg-open "http://$HOST:$port/"
-	xdg-open "http://$HOST:$port/api/streets/"
+	$START_UTILITY "http://$HOST:$port/"
+	$START_UTILITY "http://$HOST:$port/api/streets/"
 }
 
 function start_step4
 {
 	echo "Starting step 4 !"
-	local port=8080
+	local port=9080
 	echo "Do not forget to add $HOST to your hosts file for correct DNS resolving."
 	
 	# Start ajax
@@ -71,7 +73,7 @@ function start_step4
 
 	docker build ./docker/httpd-reverse-proxy -t res/httpd-reverse-proxy
 	docker run -d --name "httpd-reverse-proxy" -p $port:80 res/httpd-reverse-proxy >> $CONTAINER_STARTED_FILE
-	xdg-open "http://$HOST:$port/"
+	$START_UTILITY "http://$HOST:$port/"
 }
 
 function get_last_container_ip
@@ -82,7 +84,7 @@ function get_last_container_ip
 function start_step5
 {
 	echo "Starting step 5 !"
-	local port=8080
+	local port=9080
 	echo "Do not forget to add $HOST to your hosts file for correct DNS resolving."
 	
 	# Start step 4
@@ -97,7 +99,7 @@ function start_step5
 
 	docker build ./docker/httpd-dynamic-reverse-proxy -t res/httpd-dynamic-reverse-proxy
 	docker run -d --name "httpd-dynamic-reverse-proxy" -e IP_EXPRESS_DYNAMIC=$ip_express_dynamic -e IP_HTTPD_AJAX=$ip_http_ajax -p $port:80 res/httpd-dynamic-reverse-proxy >> $CONTAINER_STARTED_FILE
-	xdg-open "http://$HOST:$port/"
+	$START_UTILITY "http://$HOST:$port/"
 
 	echo $ip_http_ajax $ip_express_dynamic
 }
@@ -105,7 +107,7 @@ function start_step5
 function start_step5b
 {
 	echo "Starting step 5b !"
-	local port=8080
+	local port=9080
 	echo "Do not forget to add $HOST to your hosts file for correct DNS resolving."
 	
 	# Start step 4
@@ -118,7 +120,7 @@ function start_step5b
 
 	docker build ./docker/httpd-dynamic-reverse-proxy-b -t res/httpd-dynamic-reverse-proxy-b
 	docker run -d --name "httpd-dynamic-reverse-proxy-b" --link=httpd-ajax:httpd-ajax --link=express-dynamic:express-dynamic -p $port:80 res/httpd-dynamic-reverse-proxy-b >> $CONTAINER_STARTED_FILE
-	xdg-open "http://$HOST:$port/"
+	$START_UTILITY "http://$HOST:$port/"
 }
 
 ## Main
