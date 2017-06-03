@@ -123,6 +123,29 @@ function start_step5b
 	$START_UTILITY "http://$HOST:$port/"
 }
 
+function start_step_opt
+{
+	echo "Starting supplementary steps !"
+	local site_port=9080
+	local monitor_port=9090
+	local manager_port=9100
+
+	# Start step 4
+	docker build ./docker/httpd-ajax -t res/httpd-ajax
+	docker run -d --name "httpd-ajax" res/httpd-ajax >> $CONTAINER_STARTED_FILE
+
+	# Start step 2
+	docker build ./docker/express-dynamic -t res/express-dynamic
+	docker run -d --name "express-dynamic" res/express-dynamic >> $CONTAINER_STARTED_FILE
+
+	# Start traefik reverse proxy
+	docker build ./docker/traefik -t res/traefik
+	docker run -d --name "traefik" -p $monitor_port:8080 -p $site_port:80 -v /var/run/docker.sock:/var/run/docker.sock res/traefik >> $CONTAINER_STARTED_FILE
+
+	$START_UTILITY "http://$HOST:$site_port/"
+	$START_UTILITY "http://$HOST:$monitor_port/"
+}
+
 ## Main
 
 case $1 in
@@ -137,6 +160,8 @@ case $1 in
 	"step5" ) start_step5
 		;;
 	"step5b" ) start_step5b
+		;;
+	"stepOpt" ) start_step_opt
 		;;
 	  * ) show_help
 esac
