@@ -9,6 +9,8 @@ LABEL "traefik.frontend.rule"="Host: demo.res.local;PathStrip: /api/streets/"
 LABEL "traefik.backend.loadbalancer.sticky"="false"
 
 COPY ./src /opt/app
+WORKDIR /opt/app
+RUN npm install
 
 EXPOSE 3000
 
