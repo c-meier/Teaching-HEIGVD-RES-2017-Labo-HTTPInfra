@@ -65,7 +65,7 @@ This configuration use hardcoded ip address for its forwarding, therefore the do
 	docker run -d --name "httpd-reverse-proxy" -p 8080:80 res/httpd-reverse-proxy
 ```
 
-After running these commands and setting the host name resolution, the static site is available at `http://demo.res.local:8080/` and the JSON payload at `http://demo.res.local:8080/api/streets`.
+After running these commands and setting the host name resolution, the static site is available at `http://demo.res.local:8080/` and the JSON payload at `http://demo.res.local:8080/api/streets/`.
 
 # Step 4: AJAX requests with JQuery
 
@@ -95,7 +95,7 @@ After running these commands, the site can be reached at `http://demo.res.local:
 
 # Step 5: Dynamic reverse proxy configuration
 
-This part has been implemented in 2 different way `httpd-dynamic-reverse-proxy` and `httpd-dynamic-reverse-proxy-b`.
+This part has been implemented in 2 different way.
 
 The Dockerfile for the first one can be found in the `docker/httpd-dynamic-reverse-proxy` folder.
 
@@ -111,7 +111,10 @@ The image is mostly based on the step3 at the difference that it uses a script t
   docker run -d --name "express-dynamic" res/express-dynamic
 
   docker build ./docker/httpd-dynamic-reverse-proxy -t res/httpd-dynamic-reverse-proxy
-  docker run -d --name "httpd-dynamic-reverse-proxy" -e IP_EXPRESS_DYNAMIC=<get_the_ip_adress_from_express-dynamic_image> -e IP_HTTPD_AJAX=<get_the_ip_adress_from_httpd-ajax_image> -p 8080:80 res/httpd-dynamic-reverse-proxy
+  docker run -d --name "httpd-dynamic-reverse-proxy" \
+  	-e IP_EXPRESS_DYNAMIC=<get_the_ip_adress_from_express-dynamic_image> \
+	-e IP_HTTPD_AJAX=<get_the_ip_adress_from_httpd-ajax_image> -p 8080:80 \
+	res/httpd-dynamic-reverse-proxy
 ```
 
 The DockerFile for the other approach can be found in the `docker/httpd-dynamic-reverse-proxy-b folder`.
@@ -128,7 +131,9 @@ This approach use the `--link` feature from docker to link multiple containers t
   docker run -d --name "express-dynamic" res/express-dynamic
 
   docker build ./docker/httpd-dynamic-reverse-proxy-b -t res/httpd-dynamic-reverse-proxy-b
-  docker run -d --name "httpd-dynamic-reverse-proxy-b" --link=httpd-ajax:httpd-ajax --link=express-dynamic:express-dynamic -p 8080:80 res/httpd-dynamic-reverse-proxy-b
+  docker run -d --name "httpd-dynamic-reverse-proxy-b" --link=httpd-ajax:httpd-ajax \
+  	--link=express-dynamic:express-dynamic -p 8080:80 \
+	res/httpd-dynamic-reverse-proxy-b
 ```
 
 After running one of the 2 sets of commands, the site can be reached at `http://demo.res.local:8080/` (like the last step, don't forget to set the redirection for the host).
@@ -147,7 +152,7 @@ The label `traefik.backend.rule` indicate which HTTP request must be forwarded t
 
 For our configuration some labels have been added to the Dockerfile of our services.
 
-```Dokerfile
+```sh
 	# ./docker/httpd-ajax/Dockerfile
 	LABEL "traefik.backend"="httpd-ajax"
 	LABEL "traefik.frontend.rule"="Host: demo.res.local;PathPrefix: /"
@@ -155,7 +160,7 @@ For our configuration some labels have been added to the Dockerfile of our servi
 
 These labels indicate that all HTTP requests having `demo.res.local` as host and having a path starting with `/` (that is not already requested by another service) should be directed to a docker container running an instance of the `httpd-ajax` service.
 
-```Dokerfile
+```sh
 	# ./docker/express-dynamic/Dockerfile
 	LABEL "traefik.backend"="express-dynamic"
 	LABEL "traefik.port"="3000"
@@ -196,7 +201,8 @@ Configure the host resolution and run the following command to set the environne
 
 	# Start traefik reverse proxy
 	docker build ./docker/traefik -t res/traefik
-	docker run -d --name "traefik" -p 8000:8080 -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock res/traefik
+	docker run -d --name "traefik" -p 8000:8080 -p 8080:80 \
+		-v /var/run/docker.sock:/var/run/docker.sock res/traefik
 ```
 
 The site can now be reached at `http://demo.res.local:8080/` and the status page of Traefik can be reached at `http://demo.res.local:8000/`.
