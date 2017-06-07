@@ -60,10 +60,24 @@ OR
 * Using `--link` to specify dns name for container.
 * Using dns name in place of ip for containers.
 
-# Load balancing: multiple server nodes
+# Additionnal steps
 
-# Load balancing: round-robin vs sticky sessions
+* Using Traefik
+    * Uses docker.socket
+    * Uses docker labels for configuration
 
-# Dynamic cluster management
+## Load balancing: multiple server nodes
 
-# Management UI
+* The naming of the backend ...
+
+## Load balancing: round-robin vs sticky sessions
+
+* An option enable or disable sticky sessions.
+
+## Dynamic cluster management
+
+* Traefik listen to the docker socket for starting and stopping events.
+
+## Management UI
+
+* Not implemented
