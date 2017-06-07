@@ -50,7 +50,7 @@ This image is based on the same image as the one from step1. The module `proxy` 
 
 The reverse proxy is configured so that only request having `demo.res.local` as host are forwarded to the content providers; so the host name resolution of the client must be configured to resolve `demo.res.local` to the ip address of the host of the docker container.
 
-This configuration use hardcoded ip address for its forwarding, therefore the docker environment must be cleaned up and the container must be started in the correct order.
+This configuration use hardcoded ip address for its forwarding, therefore the docker environment must be cleaned up and the containers must be started in the correct order.
 
 ```sh
 	# Start step 1
@@ -69,43 +69,151 @@ After running these commands and setting the host name resolution, the static si
 
 # Step 4: AJAX requests with JQuery
 
-* Copying `docker/httpd-static` to `docker/httpd-ajax` folder
-* Cross-domain policy forbids an ajax query from querying a different domain.
-* Load script `httpdoc/js/streets.js` from main page.
-	* Ajax request every 2 sec.
-	* Show from 1 to 8 street names and city in the *Streets* zone.
+The Dockerfile for this step is in the `docker/httpd-reverse-proxy` folder.
+
+This image is copied from the one in the first step. The only change is that the website loads the script at `httpdoc/js/streets.js` from the main page. This script instruct the navigator to send, every 2 seconds, an ajax request to get from 1 to 8 streets names and city and show them in the *Streets* zone of the main page.
+
+The demonstration can't work without a reverse proxy because the cross-domain policy forbids an ajax query from querying a different domain.
+
+As with step 3 the docker containers must be run in the correct order.
+
+```sh
+	# Start ajax
+	docker build ./docker/httpd-ajax -t res/httpd-ajax
+	docker run -d --name "httpd-ajax" res/httpd-ajax
+
+	# Start step 2
+	docker build ./docker/express-dynamic -t res/express-dynamic
+	docker run -d --name "express-dynamic" res/express-dynamic
+
+	# Start reverse-proxy
+	docker build ./docker/httpd-reverse-proxy -t res/httpd-reverse-proxy
+	docker run -d --name "httpd-reverse-proxy" -p 8080:80 res/httpd-reverse-proxy
+```
+
+After running these commands, the site can be reached at `http://demo.res.local:8080/` (like the last step, don't forget to set the redirection for the host).
 
 # Step 5: Dynamic reverse proxy configuration
 
-* Copying `docker/httpd-reverse-proxy` to `docker/httpd-dynamic-reverse-proxy` folder
-* Using environnement variable to pass ip addresses.
-* Using sed to place ip addresses in conf file.
-* Using script to place ips and start server.
+This part has been implemented in 2 different way `httpd-dynamic-reverse-proxy` and `httpd-dynamic-reverse-proxy-b`.
 
-OR
+The Dockerfile for the first one can be found in the `docker/httpd-dynamic-reverse-proxy` folder.
 
-* Copying `docker/httpd-reverse-proxy` to `docker/httpd-dynamic-reverse-proxy-b` folder
-* Using `--link` to specify dns name for container.
-* Using dns name in place of ip for containers.
+The image is mostly based on the step3 at the difference that it uses a script that will, at the start of the container, recuperate the IPs address needed for the different servers. The IPs are passed using environnement variables. The script uses *sed* (a stream editor for filtering and transforming text) to replace some tokens in the configuration file (`conf/sites-available/001-reverse-proxy.conf`) by the specified values (here the environnement variables) and then start the apache2 server.
+
+```sh
+  # Start step 4
+  docker build ./docker/httpd-ajax -t res/httpd-ajax
+  docker run -d --name "httpd-ajax" res/httpd-ajax
+
+  # Start step 2
+  docker build ./docker/express-dynamic -t res/express-dynamic
+  docker run -d --name "express-dynamic" res/express-dynamic
+
+  docker build ./docker/httpd-dynamic-reverse-proxy -t res/httpd-dynamic-reverse-proxy
+  docker run -d --name "httpd-dynamic-reverse-proxy" -e IP_EXPRESS_DYNAMIC=<get_the_ip_adress_from_express-dynamic_image> -e IP_HTTPD_AJAX=<get_the_ip_adress_from_httpd-ajax_image> -p 8080:80 res/httpd-dynamic-reverse-proxy
+```
+
+The DockerFile for the other approach can be found in the `docker/httpd-dynamic-reverse-proxy-b folder`.
+
+This approach use the `--link` feature from docker to link multiple containers together. It links the given hostname with the ip address of the specified container in the `resolv.conf` of the reverse-proxy container. In other words, it uses hostname instead of IP address' to target containers.
+
+```sh
+  # Start step 4
+  docker build ./docker/httpd-ajax -t res/httpd-ajax
+  docker run -d --name "httpd-ajax" res/httpd-ajax
+
+  # Start step 2
+  docker build ./docker/express-dynamic -t res/express-dynamic
+  docker run -d --name "express-dynamic" res/express-dynamic
+
+  docker build ./docker/httpd-dynamic-reverse-proxy-b -t res/httpd-dynamic-reverse-proxy-b
+  docker run -d --name "httpd-dynamic-reverse-proxy-b" --link=httpd-ajax:httpd-ajax --link=express-dynamic:express-dynamic -p 8080:80 res/httpd-dynamic-reverse-proxy-b
+```
+
+After running one of the 2 sets of commands, the site can be reached at `http://demo.res.local:8080/` (like the last step, don't forget to set the redirection for the host).
 
 # Additionnal steps
 
-* Using Traefik
-    * Uses docker.socket
-    * Uses docker labels for configuration
+To solve most additional steps, we choose to use Traefik. Traefik is reverse-proxy made to deploy microservices. It can listen to the docker socket to detect the presence, start up or shut down of containers and configure itself accordingly. Traefik support the use of the docker's label as configuration directives. These labels have been directly set in the Dockerfiles.
+
+The configuration file that tells Traefik to listen to the docker socket is at `docker/traefik/traefik.toml`. It is copied to the `/etc/traefik/` folder in the container.
 
 ## Load balancing: multiple server nodes
 
-* The naming of the backend ...
+With Traefik a container can announce itself as a particular service by naming this service in the `traefik.backend` label. If the service's port is not the default `80` it can be set with the `traefik.port` label.
+
+The label `traefik.backend.rule` indicate which HTTP request must be forwarded to this particular service.
+
+For our configuration some labels have been added to the Dockerfile of our services.
+
+```Dokerfile
+	# ./docker/httpd-ajax/Dockerfile
+	LABEL "traefik.backend"="httpd-ajax"
+	LABEL "traefik.frontend.rule"="Host: demo.res.local;PathPrefix: /"
+```
+
+These labels indicate that all HTTP requests having `demo.res.local` as host and having a path starting with `/` (that is not already requested by another service) should be directed to a docker container running an instance of the `httpd-ajax` service.
+
+```Dokerfile
+	# ./docker/express-dynamic/Dockerfile
+	LABEL "traefik.backend"="express-dynamic"
+	LABEL "traefik.port"="3000"
+	LABEL "traefik.frontend.rule"="Host: demo.res.local;PathStrip: /api/streets/"
+```
+
+These labels indicate that all HTTP requests having `demo.res.local` as host and having `/api/streets/` as path should be directed (the path of the redirected request is `/`) to a docker container running an instance of the `express-dynamic` service.
 
 ## Load balancing: round-robin vs sticky sessions
 
-* An option enable or disable sticky sessions.
+Traefik has an option to enable or disable sticky session. The label `traefik.backend.loadbalancer.sticky` allow sticky session when set to `true` and round-robin when set to `false`.
+
+```sh
+	# ./docker/express-dynamic/Dockerfile
+	LABEL "traefik.backend.loadbalancer.sticky"="false"
+```
 
 ## Dynamic cluster management
 
-* Traefik listen to the docker socket for starting and stopping events.
+Traefik use the events fired by the docker socket to update itself whenever a container has started or stopped.
 
 ## Management UI
 
-* Not implemented
+We choose not to implement a management UI.
+
+## Validation
+
+Configure the host resolution and run the following command to set the environnement :
+
+```sh
+	# Start step 4
+	docker build ./docker/httpd-ajax -t res/httpd-ajax
+	docker run -d --name "httpd-ajax" res/httpd-ajax
+
+	# Start step 2
+	docker build ./docker/express-dynamic -t res/express-dynamic
+	docker run -d --name "express-dynamic" res/express-dynamic
+
+	# Start traefik reverse proxy
+	docker build ./docker/traefik -t res/traefik
+	docker run -d --name "traefik" -p 8000:8080 -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock res/traefik
+```
+
+The site can now be reached at `http://demo.res.local:8080/` and the status page of Traefik can be reached at `http://demo.res.local:8000/`.
+
+To start a new container for each service to test the dynamic cluster management run the following command :
+
+```sh
+	docker run -d res/httpd-ajax
+	docker run -d res/express-dynamic
+```
+
+At any time the list of active service container can be found on Traefik's status page.
+
+To see to which container service each request is forwarded to you can eavesdrop with wireshark or you can show Traefik debug information.
+
+```sh
+	docker attach traefik
+```
+
+The debug information allows the validation of each additional step. The port number of the redirected HTTP request allow the differentiation between the ajax request and the static page request.
