@@ -1,6 +1,6 @@
 ---
 title: "RES - Labo 5 - HTTP Infrastrucutre"
-author: 
+author:
 	- "Christopher Meier"
 	- "Daniel Palumbo"
 date: "11 june 2017"
@@ -11,6 +11,10 @@ geometry: "margin=1in"
 ---
 
 # Introduction
+
+This laboratory has 3 objectives. The first one is to get familiar with software tools that allow to build an environment that will allow us to serve static an dynamic content to web browser. For that we will use technologies like apache httpdserver or express.js. The second one is to implement a dynamic web application by using HTML, CSS and Javascript as its base. The last objective is to practice the usage of Docker that we saw during the semester. All components of the web infrastructure will be packaged in custom Docker images.
+
+To achieve the objectives previously annonced, we will follow a series of steps that will guide use to the end of the laboratory.
 
 # Step 1: Static HTTP server with apache httpd
 
