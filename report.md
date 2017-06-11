@@ -12,7 +12,7 @@ geometry: "margin=1in"
 
 # Introduction
 
-This laboratory has 3 objectives. The first one is to get familiar with software tools that allow to build an environment that will allow us to serve static an dynamic content to web browser. For that we will use technologies like apache httpdserver or express.js. The second one is to implement a dynamic web application by using HTML, CSS and Javascript as its base. The last objective is to practice the usage of Docker that we saw during the semester. All components of the web infrastructure will be packaged in custom Docker images.
+This laboratory has 3 objectives. The first one is to get familiar with software tools to create an environment that will serve static and dynamic content to web browsers. For that we will use technologies like apache2 httpd server and express.js. The second one is to implement a dynamic web application by using HTML, CSS, Javascript and Ajax. The last objective is to practice the creation and usage of Docker. All components of the web infrastructure will be packaged in custom Docker images.
 
 To achieve the objectives previously annonced, we will follow a series of steps that will guide use to the end of the laboratory.
 
@@ -150,7 +150,7 @@ The configuration file that tells Traefik to listen to the docker socket is at `
 
 ## Load balancing: multiple server nodes
 
-With Traefik a container can announce itself as a particular service by naming this service in the `traefik.backend` label. If the service's port is not the default `80` it can be set with the `traefik.port` label.
+With Traefik, a container can announce itself as a particular service by naming this service in the `traefik.backend` label. If the service's port is not the default `80` it can be set with the `traefik.port` label.
 
 The label `traefik.backend.rule` indicate which HTTP request must be forwarded to this particular service.
 
@@ -211,7 +211,7 @@ Configure the host resolution and run the following command to set the environne
 
 The site can now be reached at `http://demo.res.local:8080/` and the status page of Traefik can be reached at `http://demo.res.local:8000/`.
 
-To start a new container for each service to test the dynamic cluster management run the following command :
+To start new containers for each service to test the dynamic cluster management run the following commands :
 
 ```sh
 	docker run -d res/httpd-ajax
@@ -220,7 +220,7 @@ To start a new container for each service to test the dynamic cluster management
 
 At any time the list of active service container can be found on Traefik's status page.
 
-To see to which container service each request is forwarded to you can eavesdrop with wireshark or you can show Traefik debug information.
+To see to which container service each request is forwarded to, you can eavesdrop with wireshark or you can diplay Traefik's debug information.
 
 ```sh
 	docker attach traefik
